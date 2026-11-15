@@ -219,12 +219,25 @@ public class MainActivity extends Activity {
             return BuildConfig.VERSION_NAME;
         }
 
-        /** The reminder's settings as JSON: on, hour, allowed (notifications permitted), next (ms). */
+        /** The reminders' settings as JSON: on, hour, allowed (notifications permitted), next (ms), follow, followDay. */
         @JavascriptInterface
         public String reminder() {
             Activity a = MainActivity.this;
             return "{\"on\":" + Reminder.enabled(a) + ",\"hour\":" + Reminder.hour(a)
-                    + ",\"allowed\":" + Reminder.allowed(a) + ",\"next\":" + Reminder.next(a) + "}";
+                    + ",\"allowed\":" + Reminder.allowed(a) + ",\"next\":" + Reminder.next(a)
+                    + ",\"follow\":" + Reminder.follow(a) + ",\"followDay\":" + Reminder.followDay(a) + "}";
+        }
+
+        @JavascriptInterface
+        public void setFollowUp(boolean on, int day) {
+            Reminder.setFollow(MainActivity.this, on, day);
+        }
+
+        /** The page's latest numbers (JSON, already formatted) for the widget and the follow-up reminder. */
+        @JavascriptInterface
+        public void sync(String json) {
+            Widget.save(MainActivity.this, json);
+            if (Reminder.entered(MainActivity.this)) Reminder.dismiss(MainActivity.this);
         }
 
         @JavascriptInterface
