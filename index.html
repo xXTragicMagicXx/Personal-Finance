@@ -169,6 +169,16 @@ textarea.nin{font-family:inherit;font-size:15px}
 #confetti i{position:absolute;top:-12px;width:9px;height:14px;border-radius:2px;animation:fall linear forwards}
 @keyframes fall{to{transform:translateY(105vh) rotate(720deg)}}
 .cele{text-align:center;padding:6px 4px}.cele .ic{font-size:56px;line-height:1.1}.cele .big{font-size:30px;font-weight:750;margin:6px 0;font-variant-numeric:tabular-nums}
+/* liquidity tiers */
+:root{--t-now:#2348b8;--t-soon:#5b7fe0;--t-locked:#93abef;--t-retire:#c3d1f6}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--t-now:#a9bdff;--t-soon:#7896f0;--t-locked:#5470cc;--t-retire:#3a5096}}
+:root[data-theme=dark]{--t-now:#a9bdff;--t-soon:#7896f0;--t-locked:#5470cc;--t-retire:#3a5096}
+.lbar{display:flex;gap:2px;height:14px;margin:10px 0 4px}.lbar i{display:block;height:100%;min-width:3px}.lbar i:first-child{border-radius:5px 0 0 5px}.lbar i:last-child{border-radius:0 5px 5px 0}.lbar i:only-child{border-radius:5px}
+.sw4{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:7px;vertical-align:-1px}
+.lrow{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--line)}.lrow:first-of-type{border-top:0}
+.lrow .r{text-align:right}
+.liqopt{display:block;width:100%;text-align:left;margin-bottom:6px;padding:10px 12px}.liqopt.on{border-color:var(--acc);box-shadow:inset 0 0 0 1px var(--acc);background:var(--accsoft)}
+.liqopt small{display:block;color:var(--mute)}
 @media (max-width:370px){.hero .big{font-size:34px}.tile .d{font-size:15px}}
 </style>
 </head>
@@ -221,7 +231,15 @@ const single=h=>{const a=activeItems(h);return a.length===1&&a[0].name===h.name}
 function headTotal(k,h){const v=(S.months[k]||{}).vals||{};let t=0,any=false;for(const i of h.items)if(v[i.id]!=null){t+=v[i.id];any=true}return any?(h.debt?-t:t):null}
 function total(k){let t=0;for(const h of S.heads){const x=headTotal(k,h);if(x!=null)t+=x}return t}
 // value at a month: 'total' or a heading id
-const valOf=(k,who)=>who==='total'?total(k):(headTotal(k,S.heads.find(h=>h.id===who))||0);
+// How fast money in a heading can be used. Guessed from the name until you pick one.
+const LIQ=[['now','Available now','Within a few days: bank accounts, cash'],['soon','Within weeks','Sell and transfer in a week or two: crypto, stocks'],['locked','Locked up','Months to a year or more: REITs, CDs, property'],['retire','Retirement','Penalties to take out early: 401k, IRA, HSA']];
+const LIQN=Object.fromEntries(LIQ.map(l=>[l[0],l[1]]));
+function guessLiq(n){n=n.toLowerCase();if(/401|ira\b|roth|retire|pension|hsa|403b|457|tsp/.test(n))return 'retire';if(/reit|\bcd\b|cds|bond|real estate|property|house|home|land|private|vesting|lock/.test(n))return 'locked';
+ if(/bank|check|saving|cash|wallet|money market|venmo|paypal|emergency/.test(n))return 'now';if(/crypto|coin|bitcoin|btc|eth|broker|stock|invest|etf|fund|robinhood|fidelity|schwab|vanguard|etrade/.test(n))return 'soon';return null}
+const liqOf=h=>h.debt?null:(h.liq||guessLiq(h.name));
+function liqTotal(k,t){let v=0,any=false;for(const h of S.heads)if(liqOf(h)===t){const x=headTotal(k,h);if(x!=null){v+=x;any=true}}return any?v:null}
+const hasLiq=t=>S.heads.some(h=>liqOf(h)===t);
+const valOf=(k,who)=>who==='total'?total(k):who.startsWith('liq:')?(liqTotal(k,who.slice(4))||0):(headTotal(k,S.heads.find(h=>h.id===who))||0);
 const PER=[[1,'1 mo','Since last month'],[3,'3 mo','3 months'],[6,'6 mo','6 months'],[12,'1 yr','1 year'],['all','All','All time']];
 // Base month for a comparison: the latest saved month at or before the target (handles skipped months).
 function baseKey(k,n){const ks=keys().filter(x=>x<k);if(!ks.length)return null;if(n==='all')return ks[0];const t=mAdd(k,-n);let b=null;for(const x of ks)if(x<=t)b=x;return b}
@@ -346,7 +364,7 @@ function rOverview(){
   return c?`<div class="tile ${dir(c.d)}" title="${long}: compared with ${mName(c.base)}"><div class="lb">${lb}</div><div class="d">${arrow(c.d)} ${smoney(c.d)}</div><div class="p">${c.p!=null?pct(c.p):'—'}</div></div>`
   :`<div class="tile na"><div class="lb">${lb}</div><div class="d">Not enough history</div></div>`}).join('')}</div>
   <p class="muted small" style="margin:8px 2px 0">Each compares ${mName(k)} with the month that long before (or the nearest earlier one you saved).</p></div>`;
- h+=goalsCard();
+ h+=liqCard(k)+goalsCard();
  const rg=S.settings.range,rk=rangeKeys(rg);
  h+=`<div class="card"><div class="hdr"><h3 style="margin:0">Net worth over time</h3><div class="seg">${[[6,'6M'],[12,'1Y'],[36,'3Y'],['all','All']].map(([v,l])=>`<button class="${rg==v?'on':''}" onclick="S.settings.range=${JSON.stringify(v)};save();render()">${l}</button>`).join('')}</div></div>
   ${lineChart(rk.map(x=>({k:x,v:total(x)})))}${rk.some(x=>S.notes[x])?'<p class="muted small" style="margin:4px 2px 0">○ Ringed months have a note. Tap a point to read it; tap anywhere else to close.</p>':''}</div>`;
@@ -354,9 +372,20 @@ function rOverview(){
  if(chPts.length)h+=`<div class="card"><h3>Change each month</h3>${changeBars(chPts)}<p class="muted small" style="margin:6px 2px 0"><span class="chg up">▲ green</span> = up from the month before, <span class="chg down">▼ red</span> = down.</p></div>`;
  const hs=S.heads.map(x=>({h:x,v:headTotal(k,x)})).filter(x=>x.v!=null);const pos=hs.filter(x=>x.v>0).reduce((a,x)=>a+x.v,0)||1;
  h+=`<div class="card"><h3>By heading</h3>${hs.map(({h:x,v})=>{const c=cmp(k,1,x.id);return `<div class="brk"><div class="between"><b>${esc(x.name)}${x.debt?' <span class="tag">DEBT</span>':''}</b><span class="num" style="font-weight:600">${money(v)}</span></div>
-  <div class="between small"><span class="muted">${v>0?Math.round(v/pos*100)+'% of assets':''}</span>${c?chg(c):''}</div><div class="bar${x.debt?' debt':''}"><i style="width:${Math.min(100,Math.abs(v)/pos*100)}%"></i></div></div>`}).join('')||'<p class="muted">Nothing entered for this month.</p>'}</div>`;
+  <div class="between small"><span class="muted">${[v>0?Math.round(v/pos*100)+'% of assets':'',liqOf(x)?LIQN[liqOf(x)]:''].filter(Boolean).join(' · ')}</span>${c?chg(c):''}</div><div class="bar${x.debt?' debt':''}"><i style="width:${Math.min(100,Math.abs(v)/pos*100)}%"></i></div></div>`}).join('')||'<p class="muted">Nothing entered for this month.</p>'}</div>`;
  $('#main').innerHTML=`<h2>Overview</h2>`+h;
 }
+
+/* Overview: how much of your money you could actually use, and how soon. */
+function liqCard(k){const tiers=LIQ.map(([t,n,d])=>({t,n,d,v:liqTotal(k,t)})).filter(x=>x.v!=null);const unset=S.heads.filter(h=>!h.debt&&!liqOf(h)&&headTotal(k,h)!=null);
+ if(!tiers.length&&!unset.length)return '';const pos=tiers.reduce((a,x)=>a+Math.max(0,x.v),0)+unset.reduce((a,h)=>a+Math.max(0,headTotal(k,h)),0)||1;
+ const now=tiers.find(x=>x.t==='now'),cn=now&&cmp(k,1,'liq:now');
+ let h=`<div class="card"><h3 style="margin-bottom:2px">💧 What you can access</h3>${now?`<div class="between" style="align-items:baseline"><span class="muted">Available now</span><span><b class="num" style="font-size:24px">${money(now.v)}</b> <span class="muted small">${Math.round(Math.max(0,now.v)/pos*100)}%</span></span></div>${cn?`<div style="text-align:right" class="small">${chg(cn)} <span class="muted">vs ${mName(cn.base)}</span></div>`:''}`:''}
+  <div class="lbar" role="img" aria-label="Share of assets by how fast you can use it">${tiers.filter(x=>x.v>0).map(x=>`<i style="width:${x.v/pos*100}%;background:var(--t-${x.t})" title="${x.n}"></i>`).join('')}${unset.length?`<i style="flex:1;background:var(--line)"></i>`:''}</div>`;
+ for(const x of tiers){const c=cmp(k,1,'liq:'+x.t);h+=`<div class="lrow"><div><b><span class="sw4" style="background:var(--t-${x.t})"></span>${x.n}</b><div class="muted small">${esc(S.heads.filter(hh=>liqOf(hh)===x.t&&headTotal(k,hh)!=null).map(hh=>hh.name).join(', '))}</div></div>
+  <div class="r"><div class="num" style="font-weight:600">${money(x.v)} <span class="muted small">${Math.round(Math.max(0,x.v)/pos*100)}%</span></div>${c?chg(c):''}</div></div>`}
+ if(unset.length)h+=`<div class="lrow"><div><b><span class="sw4" style="background:var(--line)"></span>Not sorted yet</b><div class="muted small">${unset.map(x=>`<a href="#" onclick="event.preventDefault();headM('${x.id}')">${esc(x.name)}</a>`).join(', ')}: tap to choose</div></div></div>`;
+ return h+'</div>'}
 
 /* ---------- Update (enter a month's totals, manage headings) ---------- */
 let UM=null;
@@ -436,14 +465,21 @@ function headM(id){const x=id&&S.heads.find(h=>h.id===id);
  openM(`<h3>${x?'Edit heading':'New heading'}</h3><label>Name<input id="hn" value="${esc(x?x.name:'')}" placeholder="e.g. 401k, Crypto, Bank accounts" autofocus></label>
   ${x?'':`<label>Accounts under it <span class="small">(optional, one per line)</span><textarea id="hi" rows="3" placeholder="e.g.\nChecking\nSavings" style="font-family:inherit;font-size:15px"></textarea></label>`}
   <label class="chk"><input type="checkbox" id="hd" ${x&&x.debt?'checked':''}> This is money owed (loan, credit card) — subtract it</label>
+  <div id="liqw"><label style="margin-bottom:6px">How fast could you use this money?</label>${LIQ.map(([v,n,d])=>`<button class="liqopt" data-v="${v}" onclick="pickLiq('${v}')"><b>${n}</b><small>${d}</small></button>`).join('')}</div>
   <button class="pri full" id="hs">${x?'Save':'Add heading'}</button>
   ${x&&!x.debt?`<button class="full" onclick="coinM('${x.id}')">🪙 Add a crypto coin (priced automatically)</button>`:''}
   ${x?`<div class="row"><button onclick="moveHead('${x.id}',-1)" ${idx<=0?'disabled':''}>↑ Move up</button><button onclick="moveHead('${x.id}',1)" ${idx>=S.heads.length-1?'disabled':''}>↓ Move down</button></div>
   <button class="full danger" style="margin-top:8px" onclick="removeM('head','${x.id}',${has})">${has?'Remove heading…':'Delete heading'}</button>`:''}`);
  $('#hs').onclick=()=>{const n=$('#hn').value.trim();if(!n)return say('Give the heading a name.');
-  if(x){if(single(x))activeItems(x)[0].name=n;x.name=n;x.debt=$('#hd').checked}
-  else{const names=$('#hi').value.split('\n').map(s=>s.trim()).filter(Boolean);S.heads.push({id:uid(),name:n,debt:$('#hd').checked,items:(names.length?names:[n]).map(s=>({id:uid(),name:s}))})}
-  save();closeM(render)}}
+  if(x){if(single(x))activeItems(x)[0].name=n;x.name=n;x.debt=$('#hd').checked;x.liq=LQ||undefined}
+  else{const names=$('#hi').value.split('\n').map(s=>s.trim()).filter(Boolean);S.heads.push({id:uid(),name:n,debt:$('#hd').checked,liq:LQ||undefined,items:(names.length?names:[n]).map(s=>({id:uid(),name:s}))})}
+  save();closeM(render)}
+ // liquidity picker: starts on the saved choice, or a guess from the name (updated as you type)
+ LQ=x?x.liq||null:null;let typed=!!LQ;window.pickLiq=v=>{LQ=v;typed=true;showLiq()};
+ const showLiq=()=>{const g=LQ||guessLiq($('#hn').value);document.querySelectorAll('.liqopt').forEach(b=>b.classList.toggle('on',b.dataset.v===g));$('#liqw').hidden=$('#hd').checked;if(!typed)LQ=null;else if(!LQ)LQ=g};
+ $('#hn').addEventListener('input',showLiq);$('#hd').addEventListener('change',showLiq);showLiq();
+ const sv=$('#hs').onclick;$('#hs').onclick=()=>{if(!LQ)LQ=guessLiq($('#hn').value);sv()}}
+let LQ=null;
 function moveHead(id,d){const i=S.heads.findIndex(h=>h.id===id),j=i+d;if(j<0||j>=S.heads.length)return;[S.heads[i],S.heads[j]]=[S.heads[j],S.heads[i]];save();headM(id);render()}
 function addItemM(hid){const x=S.heads.find(h=>h.id===hid),one=single(x);
  openM(`<h3>Add account to ${esc(x.name)}</h3><label>Account name<input id="in" placeholder="e.g. Savings, Coinbase, Roth IRA" autofocus></label>
@@ -512,13 +548,13 @@ function pickCoin(hid,iid,id,sym,name){const x=S.heads.find(h=>h.id===hid);const
 function unCoin(hid,iid){const i=S.heads.find(h=>h.id===hid).items.find(t=>t.id===iid);delete i.coin;save();closeM(render)}
 
 /* ---------- Goals & milestones ---------- */
-const gHead=g=>g.who==='total'?null:S.heads.find(h=>h.id===g.who);
+const gHead=g=>g.who==='total'||g.who.startsWith('liq:')?null:S.heads.find(h=>h.id===g.who);
 const gDebt=g=>{const h=gHead(g);return !!(h&&h.debt)};
-const gOK=g=>g.who==='total'||!!gHead(g);
+const gOK=g=>g.who==='total'||g.who.startsWith('liq:')||!!gHead(g);
 // Debt goals count what is owed (a positive number) and are met when it drops to the target or below.
 const gVal=(g,k)=>gDebt(g)?-(headTotal(k,gHead(g))||0):valOf(k,g.who);
 const gMet=(g,k)=>gDebt(g)?gVal(g,k)<=g.amount:gVal(g,k)>=g.amount;
-const gName=g=>g.name||(g.who==='total'?'Net worth '+money(g.amount):gDebt(g)?gHead(g).name+' under '+money(g.amount):gHead(g).name+' '+money(g.amount));
+const gName=g=>g.name||(g.who==='total'?'Net worth '+money(g.amount):g.who.startsWith('liq:')?LIQN[g.who.slice(4)]+' '+money(g.amount):gDebt(g)?gHead(g).name+' under '+money(g.amount):gHead(g).name+' '+money(g.amount));
 function gProg(g,k){if(!k)return 0;const v=gVal(g,k);if(gDebt(g)){const st=Math.max(g.start||v,v);return st<=g.amount?1:Math.max(0,Math.min(1,(st-v)/(st-g.amount)))}return g.amount>0?Math.max(0,Math.min(1,v/g.amount)):0}
 // Estimate when a goal is reached at the average pace of the last 6 months.
 function gPace(g){const ks=keys().slice(-7);if(ks.length<3)return null;const a=gVal(g,ks[0]),b=gVal(g,ks[ks.length-1]);const [y0,m0]=mParts(ks[0]),[y1,m1]=mParts(ks[ks.length-1]);const n=(y1-y0)*12+m1-m0;if(!n)return null;
@@ -534,7 +570,7 @@ function goalsCard(){const k=latest(),act=S.goals.filter(g=>!g.reached&&gOK(g)).
  if(done.length)h+=`<details style="margin-top:8px"><summary class="muted small" style="cursor:pointer">✓ ${done.length} reached</summary>${done.sort((a,b)=>a.reached<b.reached?1:-1).map(g=>`<div class="goal done" onclick="goalM('${g.id}')"><div class="between"><b>${esc(gName(g))}</b><span class="muted small">${mName(g.reached)}</span></div></div>`).join('')}</details>`;
  return h+'</div>'}
 function goalM(id){const g=id&&S.goals.find(x=>x.id===id);const hs=activeHeads();
- openM(`<h3>${g?'Edit goal':'New goal'}</h3><label>Goal for<select id="gw">${[['total','Net worth'],...hs.map(x=>[x.id,x.name+(x.debt?' (debt)':'')])].map(([v,l])=>`<option value="${v}" ${g&&g.who===v?'selected':''}>${esc(l)}</option>`).join('')}</select></label>
+ openM(`<h3>${g?'Edit goal':'New goal'}</h3><label>Goal for<select id="gw">${[['total','Net worth'],...LIQ.map(([v,n])=>['liq:'+v,n+(v==='now'?' (e.g. emergency fund)':' (all headings)')]),...hs.map(x=>[x.id,x.name+(x.debt?' (debt)':'')])].map(([v,l])=>`<option value="${v}" ${g&&g.who===v?'selected':''}>${esc(l)}</option>`).join('')}</select></label>
   <label id="gl">Amount</label><div class="money"><input id="ga" inputmode="decimal" value="${g?g.amount:''}" placeholder="100,000"></div><p class="muted small" id="gh" style="margin:2px 2px 10px"></p>
   <label>Name <span class="small">(optional)</span><input id="gn" value="${esc(g?g.name:'')}" placeholder="e.g. Six figures!"></label>
   <button class="pri full" id="gs">${g?'Save':'Add goal'}</button>${g?`<button class="full danger" onclick="delGoal('${g.id}')">Delete goal</button>`:''}`);
@@ -554,18 +590,18 @@ function celebrate(hit,m){confetti(130);const nx=S.goals.filter(g=>!g.reached&&g
 /* Hands the latest numbers to the Android app for its home-screen widget and the follow-up reminder. */
 function syncApp(){if(!NA||!NA.sync)return;try{const k=latest(),c=k&&cmp(k,1),act=S.goals.filter(g=>!g.reached&&gOK(g)).sort((a,b)=>gProg(b,k)-gProg(a,k)),g=k&&act[0];
  NA.sync(JSON.stringify({latest:k||'',month:k?mName(k):'',total:k?money(total(k)):'',chg:c?smoney(c.d):'',pct:c&&c.p!=null?pct(c.p):'',dir:c?dir(c.d):'flat',vs:c?MN[mParts(c.base)[1]]:'',
-  goal:g?gName(g):'',goalPct:g?Math.floor(gProg(g,k)*100):-1}))}catch(e){}}
+  cash:k&&hasLiq('now')?money(liqTotal(k,'now')||0):'',goal:g?gName(g):'',goalPct:g?Math.floor(gProg(g,k)*100):-1}))}catch(e){}}
 
 /* ---------- History ---------- */
 function rHistory(){
  const ks=keys();if(!ks.length){$('#main').innerHTML=`<h2>History</h2><div class="card empty"><div class="ic">🗂️</div><p class="muted">Saved months will be listed here with how each one compares.</p><button class="pri full" onclick="goPage('update')">Enter totals</button></div>`;return}
  const k=ks[ks.length-1],hs=S.heads.filter(x=>ks.some(m=>headTotal(m,x)!=null));
- let who=S.settings.hist;if(who!=='total'&&!hs.some(x=>x.id===who))who='total';const U=S.settings.cmp;
+ let who=S.settings.hist;if(who!=='total'&&!hs.some(x=>x.id===who)&&!(who.startsWith('liq:')&&hasLiq(who.slice(4))))who='total';const U=S.settings.cmp;
  let h=`<h2>History</h2><div class="card"><div class="hdr" style="margin-bottom:6px"><h3 style="margin:0">Compare · ${mName(k)}</h3><div class="seg"><button class="${U==='usd'?'on':''}" onclick="S.settings.cmp='usd';save();render()">$</button><button class="${U==='pct'?'on':''}" onclick="S.settings.cmp='pct';save();render()">%</button></div></div>
   <div class="tblw"><table class="cmp"><tr><th></th>${PER.map(p=>`<th>${p[1]}</th>`).join('')}</tr>`;
  const rowH=(name,id,cls)=>`<tr class="${cls||''}"><td>${name}</td>${PER.map(([n])=>{const c=cmp(k,n,id);if(!c)return '<td class="na">—</td>';const t=U==='usd'?(c.d>0?'+':c.d<0?'−':'')+compact(Math.abs(c.d)):(c.p!=null?pct(c.p):'—');return `<td class="${dir(c.d)}">${t}</td>`}).join('')}</tr>`;
- h+=rowH('Net worth','total','tot')+hs.map(x=>rowH(esc(x.name)+(x.archived?' <span class="muted small">(hidden)</span>':''),x.id)).join('')+`</table></div></div>`;
- h+=`<div class="chips"><button class="${who==='total'?'on':''}" onclick="S.settings.hist='total';save();render()">Net worth</button>${hs.map(x=>`<button class="${who===x.id?'on':''}" onclick="S.settings.hist='${x.id}';save();render()">${esc(x.name)}</button>`).join('')}</div>`;
+ h+=rowH('Net worth','total','tot')+LIQ.filter(([t])=>hasLiq(t)).map(([t,n])=>rowH('<span class="sw4" style="background:var(--t-'+t+')"></span>'+n,'liq:'+t)).join('')+hs.map(x=>rowH(esc(x.name)+(x.archived?' <span class="muted small">(hidden)</span>':''),x.id)).join('')+`</table></div></div>`;
+ h+=`<div class="chips"><button class="${who==='total'?'on':''}" onclick="S.settings.hist='total';save();render()">Net worth</button>${LIQ.filter(([t])=>hasLiq(t)).map(([t,n])=>`<button class="${who==='liq:'+t?'on':''}" onclick="S.settings.hist='liq:${t}';save();render()">${n}</button>`).join('')}${hs.map(x=>`<button class="${who===x.id?'on':''}" onclick="S.settings.hist='${x.id}';save();render()">${esc(x.name)}</button>`).join('')}</div>`;
  h+=`<div class="card">${lineChart(ks.map(m=>({k:m,v:valOf(m,who)})))}</div><div class="card" style="padding:4px 4px">`;
  for(let j=ks.length-1;j>=0;j--){const m=ks[j],v=valOf(m,who),pm=ks[j-1],c=pm?{d:v-valOf(pm,who),p:valOf(pm,who)?(v-valOf(pm,who))/Math.abs(valOf(pm,who)):null}:null;
   h+=`<div class="mrow ${c?dir(c.d):'flat'}" onclick="monthM('${m}')"><div><b>${mName(m,true)}</b><div class="muted small">${pm?'vs '+mName(pm):'First month'}</div></div><div class="r"><div class="num" style="font-weight:700">${money(v)}</div>${c?chg(c):''}</div>${S.notes[m]?`<div class="note">📝 ${esc(S.notes[m])}</div>`:''}</div>`}
@@ -668,7 +704,7 @@ function previewImport(text){const a=analyze(text);if(a.err)return say(a.err);
   checkGoals(latest(),true);
   save();closeM(()=>goPage('overview'));say(`Imported ${a.ms.length} months`)}}
 
-function sample(){const H=[['Bank accounts',0,[['Checking',3200],['Savings',12000]]],['401k',0,[['401k',48000]]],['Crypto',0,[['Crypto',4200]]],['Brokerage',0,[['Brokerage',9000]]],['Credit card',1,[['Credit card',1800]]]];
+function sample(){const H=[['Bank accounts',0,[['Checking',3200],['Savings',12000]]],['401k',0,[['401k',48000]]],['Crypto',0,[['Crypto',4200]]],['Brokerage',0,[['Brokerage',9000]]],['REIT',0,[['REIT',15000]]],['Credit card',1,[['Credit card',1800]]]];
  S.heads=H.map(([n,d,its])=>({id:uid(),name:n,debt:!!d,items:its.map(([m])=>({id:uid(),name:m}))}));const base=H.flatMap(h=>h[2].map(i=>i[1]));
  let k=mAdd(curM(),-19);const cur=base.slice();for(let j=0;j<19;j++){const vals={};let q=0;
   S.heads.forEach(x=>x.items.forEach(i=>{const b=cur[q];const g=x.name==='Crypto'?(Math.sin(j*1.3)*.18+.03):x.debt?(Math.cos(j)*.3):x.name==='401k'?.012+Math.sin(j*.8)*.025:(Math.sin(j*2.1+q)*.06+.01);cur[q]=Math.max(0,Math.round(b*(1+g)+(x.name==='401k'?650:0)));vals[i.id]=cur[q];q++}));

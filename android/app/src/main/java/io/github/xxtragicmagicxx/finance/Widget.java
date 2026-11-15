@@ -16,7 +16,7 @@ import java.util.Calendar;
 import java.util.Locale;
 
 /**
- * Home-screen widget: net worth, the change since last month, the closest goal, and a nudge when
+ * Home-screen widget: net worth, the change since last month, cash available now, the closest goal, and a nudge when
  * this month hasn't been entered. The page sends its numbers (already formatted) through
  * AndroidApp.sync each time it saves, so the widget never has to read the page's storage.
  */
@@ -71,6 +71,10 @@ public class Widget extends AppWidgetProvider {
             v.setTextViewText(R.id.w_change, arrow + chg + (pct.isEmpty() ? "" : " · " + pct) + "  vs " + d.optString("vs"));
             v.setTextColor(R.id.w_change, c.getColor("up".equals(dir) ? R.color.w_up : "down".equals(dir) ? R.color.w_down : R.color.w_mute));
         }
+
+        String cash = d.optString("cash");
+        if (!cash.isEmpty()) v.setTextViewText(R.id.w_cash, "💵 Available now: " + cash);
+        v.setViewVisibility(R.id.w_cash, any && !cash.isEmpty() ? View.VISIBLE : View.GONE);
 
         if (due) {
             String month = new SimpleDateFormat("MMMM", Locale.getDefault()).format(Calendar.getInstance().getTime());

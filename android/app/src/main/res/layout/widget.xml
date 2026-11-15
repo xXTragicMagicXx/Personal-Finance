@@ -18,6 +18,10 @@
     <TextView android:id="@+id/w_change" android:layout_width="match_parent" android:layout_height="wrap_content"
         android:maxLines="2" android:textColor="@color/w_mute" android:textSize="13sp" android:textStyle="bold" />
 
+    <TextView android:id="@+id/w_cash" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="4dp" android:maxLines="1" android:textColor="@color/w_ink" android:textSize="13sp"
+        android:visibility="gone" />
+
     <TextView android:id="@+id/w_due" android:layout_width="match_parent" android:layout_height="wrap_content"
         android:layout_marginTop="6dp" android:maxLines="1" android:textColor="@color/w_acc" android:textSize="13sp"
         android:textStyle="bold" android:visibility="gone" />
