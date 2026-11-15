@@ -7,6 +7,7 @@ A simple app for tracking what you have, month by month. Add headings (bank acco
 - **History**: a comparison table for every heading, and each month with its change. Tap a month to see its breakdown or edit it.
 - **Settings**: monthly reminder, theme, import from Excel, export to CSV, backup and restore.
 - **Reminders**: the Android app sends a notification on the 1st of each month, plus a follow-up (on the 5th by default) only if you still haven't entered the month. Both are adjustable in Settings.
+- **Crypto auto-pricing**: add coins under a heading ("+ Add coin"), enter how many you hold, and the dollar value comes from the current price (CoinGecko, no account needed). Past months keep the price they were saved with.
 - **Notes**: add a note to any month (bonus, bought a car…). Months with notes are ringed on the chart and show in History.
 - **Goals & milestones**: set amounts to reach for net worth or any heading, or a debt to pay down. Progress bars show an estimate of when you'll get there at your recent pace, and you get confetti when you pass one (or hit a new all-time high).
 - **Home-screen widget** (Android): net worth, change since last month, your closest goal, and a nudge when the month is due. Long-press the home screen → Widgets → Finance.
