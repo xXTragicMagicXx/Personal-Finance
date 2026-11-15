@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2f5bd3">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Finance</title>
+<style>
+:root{--bg:#f1f4f2;--card:#fff;--ink:#17201c;--mute:#5f6d67;--line:#dde3e0;--acc:#2f5bd3;--accink:#fff;--accsoft:#e6ecfb;
+ --up:#167a46;--upbg:#e3f4ea;--down:#c2352d;--downbg:#fbe6e4;--flat:#5f6d67}
+:root{color-scheme:light dark}:root[data-theme=light]{color-scheme:light}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#101614;--card:#18201d;--ink:#e7eeea;--mute:#91a19a;--line:#27322e;--acc:#7b9cff;--accink:#0d1430;--accsoft:#1d2742;
+ --up:#45c483;--upbg:#173326;--down:#f06d64;--downbg:#3a1d1b;--flat:#91a19a}}
+:root[data-theme=dark]{color-scheme:dark;--bg:#101614;--card:#18201d;--ink:#e7eeea;--mute:#91a19a;--line:#27322e;--acc:#7b9cff;--accink:#0d1430;--accsoft:#1d2742;
+ --up:#45c483;--upbg:#173326;--down:#f06d64;--downbg:#3a1d1b;--flat:#91a19a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-top:env(safe-area-inset-top,0px)}
+#main{padding:14px 14px 96px;max-width:640px;margin:0 auto}
+#main.upd{padding-bottom:170px}
+h2{font-size:24px;letter-spacing:-.3px;margin:6px 2px 14px}
+h3{margin:0 0 10px;font-size:17px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 1px 2px rgba(20,30,25,.05)}
+.muted{color:var(--mute);font-size:14px}.small{font-size:13px}
+.num{font-variant-numeric:tabular-nums}
+.between{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.row{display:flex;gap:8px;align-items:center}.row>*{flex:1}
+input,select,button,textarea{font:inherit;color:inherit}
+input,select,textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);margin:4px 0 10px}
+textarea{resize:vertical;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px}
+label{display:block;font-size:14px;color:var(--mute)}
+button{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:11px 14px;cursor:pointer;transition:transform .08s,filter .12s}
+button:active{transform:scale(.97);filter:brightness(.94)}
+button.pri{background:var(--acc);color:var(--accink);border-color:var(--acc);font-weight:600}
+button.danger{color:var(--down)}
+button.full{width:100%;margin-bottom:8px}
+button.link{border:0;background:none;color:var(--acc);padding:6px 4px;font-weight:600}
+button:disabled{opacity:.4}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--acc);outline-offset:-1px;border-color:var(--acc)}
+button:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+a{color:var(--acc)}
+
+/* gain / loss */
+.chg{display:inline-flex;align-items:baseline;gap:5px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.chg.up{color:var(--up)}.chg.down{color:var(--down)}.chg.flat{color:var(--flat)}
+.chg small{font-weight:600;font-size:.85em;opacity:.9}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:4px 11px;font-weight:600;font-size:14px;font-variant-numeric:tabular-nums}
+.pill.up{background:var(--upbg);color:var(--up)}.pill.down{background:var(--downbg);color:var(--down)}.pill.flat{background:var(--bg);color:var(--flat)}
+
+/* overview */
+.hero{padding:18px 16px}
+.hero .big{font-size:40px;font-weight:750;letter-spacing:-1px;margin:2px 0 8px;font-variant-numeric:tabular-nums;line-height:1.1}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px}
+.tile{border-radius:12px;padding:10px 11px;border:1px solid var(--line);background:var(--card)}
+.tile.up{background:var(--upbg);border-color:transparent}.tile.down{background:var(--downbg);border-color:transparent}
+.tile .lb{font-size:12px;color:var(--mute);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.tile .d{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px;white-space:nowrap}
+.tile .p{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
+.tile.up .d,.tile.up .p{color:var(--up)}.tile.down .d,.tile.down .p{color:var(--down)}
+.tile.na .d{color:var(--mute);font-weight:500;font-size:14px}
+.banner{display:flex;gap:12px;align-items:center;background:var(--accsoft);border:1px solid transparent;border-radius:16px;padding:12px 14px;margin-bottom:12px}
+.banner b{display:block}.banner .grow{flex:1}
+.brk{padding:11px 0;border-top:1px solid var(--line)}.brk:first-of-type{border-top:0;padding-top:2px}
+.bar{height:6px;border-radius:9px;background:var(--bg);margin-top:7px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:9px;background:var(--acc)}
+.bar.debt i{background:var(--mute)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.chips button{padding:6px 12px;border-radius:99px;font-size:14px}
+.chips button.on{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:600}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;border-radius:0;padding:5px 11px;font-size:13px;background:var(--card)}
+.seg button.on{background:var(--ink);color:var(--bg);font-weight:600}
+
+/* charts */
+.chart{position:relative;margin-top:6px;touch-action:pan-y}
+.chart svg{display:block;width:100%;overflow:visible}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.chart .axis{fill:var(--mute);font-size:11px;font-variant-numeric:tabular-nums}
+.chart .ln{fill:none;stroke:var(--acc);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart .ar{fill:var(--acc);opacity:.10}
+.chart .dt{fill:var(--acc);stroke:var(--card);stroke-width:2}
+.chart .cross{stroke:var(--mute);stroke-width:1;stroke-dasharray:3 3}
+.chart .b-up{fill:var(--up)}.chart .b-down{fill:var(--down)}
+.chart .zero{stroke:var(--mute);stroke-width:1}
+.chart .hl{opacity:.55}
+.tip{position:absolute;top:0;pointer-events:none;background:var(--ink);color:var(--bg);border-radius:9px;padding:6px 9px;font-size:13px;line-height:1.3;white-space:nowrap;transform:translateX(-50%);display:none;z-index:2;box-shadow:0 3px 10px rgba(0,0,0,.25)}
+.tip b{font-variant-numeric:tabular-nums}
+
+/* history */
+.mrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 10px 11px 12px;border-top:1px solid var(--line);cursor:pointer}
+.mrow:first-of-type{border-top:0}
+.mrow.up{box-shadow:inset 4px 0 var(--up)}.mrow.down{box-shadow:inset 4px 0 var(--down)}.mrow.flat{box-shadow:inset 4px 0 var(--line)}
+.mrow .r{text-align:right}
+.tblw{overflow-x:auto;margin:0 -14px;padding:0 14px}
+table.cmp{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums;letter-spacing:-.2px}
+table.cmp th{font-size:12px;color:var(--mute);font-weight:600;text-align:right;padding:6px 3px;white-space:nowrap}
+table.cmp th:first-child,table.cmp td:first-child{text-align:left;padding-left:0;max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+table.cmp td{text-align:right;padding:8px 3px;border-top:1px solid var(--line);white-space:nowrap;font-weight:600}
+table.cmp td.up{color:var(--up)}table.cmp td.down{color:var(--down)}table.cmp td.na{color:var(--mute);font-weight:400}
+table.cmp tr.tot td{font-weight:750}
+
+/* update */
+.mnav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0 12px}
+.mnav b{font-size:20px}
+.mnav button{width:44px;height:44px;padding:0;border-radius:99px;font-size:20px}
+.hd{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px}
+.hd h3{margin:0;display:flex;align-items:center;gap:8px}
+.tag{display:inline-block;border-radius:99px;padding:1px 8px;font-size:11px;font-weight:700;background:var(--bg);color:var(--mute);border:1px solid var(--line);letter-spacing:.3px}
+.fld{margin-top:6px}
+.fld .lab{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:14px;color:var(--mute)}
+.fld .lab span:first-child{cursor:pointer}
+.money{position:relative}
+.money::before{content:'$';position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--mute);pointer-events:none;margin-top:-1px}
+.money input{padding-left:24px;margin:4px 0 2px;font-size:18px;font-variant-numeric:tabular-nums}
+.money input.bad{outline:2px solid var(--down)}
+.fhint{display:flex;justify-content:space-between;gap:8px;font-size:13px;min-height:18px;margin-bottom:4px}
+.fhint button{border:0;background:none;padding:0;color:var(--acc);font-size:13px;font-weight:600}
+.dots{border:0;background:none;padding:4px 10px;font-size:20px;line-height:1;color:var(--mute)}
+#totbar{position:fixed;left:0;right:0;bottom:calc(58px + env(safe-area-inset-bottom,0px));z-index:3;padding:0 10px 8px;pointer-events:none}
+#totbar .in{max-width:620px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 12px;display:flex;align-items:center;gap:10px;box-shadow:0 4px 18px rgba(0,0,0,.14);pointer-events:auto}
+#totbar .in>div{flex:1;min-width:0}
+#totbar b{font-size:20px;font-variant-numeric:tabular-nums}
+#totbar button{flex:none}
+
+/* nav, sheets, toast */
+#nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:4;box-shadow:0 -1px 8px rgba(0,0,0,.05)}
+#nav button{flex:1;border:0;border-radius:0;background:none;font-size:11px;color:var(--mute);padding:8px 0 7px;display:flex;flex-direction:column;align-items:center;gap:2px}
+#nav svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#nav button.on{color:var(--acc);font-weight:700}
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;justify-content:center;z-index:8}
+#modal.open{display:flex;animation:fade .18s}
+#sheet{background:var(--card);width:100%;max-width:640px;border-radius:20px 20px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));max-height:90%;overflow-y:auto;animation:up .22s ease-out}
+#sheet::before{content:'';display:block;width:40px;height:4px;border-radius:9px;background:var(--line);margin:-6px auto 12px}
+@keyframes fade{from{opacity:0}}@keyframes up{from{transform:translateY(28px)}}
+#toast{position:fixed;left:12px;right:12px;max-width:616px;margin:0 auto;bottom:calc(76px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:12px 14px;border-radius:12px;z-index:9;display:none;box-shadow:0 4px 16px rgba(0,0,0,.3);font-size:15px}
+.empty{text-align:center;padding:26px 16px}
+.empty .ic{font-size:44px}
+.steps{text-align:left;margin:14px auto 18px;max-width:340px;padding-left:20px;color:var(--mute)}
+.steps li{margin-bottom:6px}
+.chk{display:flex;align-items:center;gap:10px;margin:6px 0 12px;font-size:15px;color:var(--ink)}
+.chk input{width:22px;height:22px;margin:0}
+.kv{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:15px}
+.kv:first-child{border-top:0}
+.kv.sub{padding-left:14px;font-size:14px;color:var(--mute)}
+.sw{position:relative;width:48px;height:28px;flex:none}
+.sw input{opacity:0;width:0;height:0;margin:0}
+.sw span{position:absolute;inset:0;border-radius:99px;background:var(--line);transition:.2s}
+.sw span::after{content:'';position:absolute;width:22px;height:22px;left:3px;top:3px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.sw input:checked+span{background:var(--acc)}.sw input:checked+span::after{transform:translateX(20px)}
+@media (max-width:370px){.hero .big{font-size:34px}.tile .d{font-size:15px}}
+</style>
+</head>
+<body>
+<div id="main"></div>
+<div id="totbar" hidden></div>
+<nav id="nav"></nav>
+<div id="modal"><div id="sheet"></div></div>
+<div id="toast"></div>
+<script>
+'use strict';
+/* ---------- storage ---------- */
+const KEY='finance-v1';
+const def=()=>({heads:[],months:{},drafts:{},settings:{theme:'auto',range:'all',cmp:'usd',hist:'total'}});
+function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&d.heads&&d.months){const b=def();return Object.assign(b,d,{settings:Object.assign(b.settings,d.settings),drafts:d.drafts||{}})}}catch(e){}return def()}
+let S=load();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){say('Could not save: storage is full or blocked.')}}
+const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-3);
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+const NA=window.AndroidApp||null;
+const pad=n=>String(n).padStart(2,'0');
+const mk=(y,m)=>{const d=new Date(y,m,1);return d.getFullYear()+'-'+pad(d.getMonth()+1)};
+const mParts=k=>{const [y,m]=k.split('-').map(Number);return [y,m-1]};
+const mAdd=(k,n)=>{const [y,m]=mParts(k);return mk(y,m+n)};
+const curM=()=>{const d=new Date();return mk(d.getFullYear(),d.getMonth())};
+const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MNL=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const mName=(k,long)=>{const [y,m]=mParts(k);return (long?MNL:MN)[m]+' '+y};
+const mShort=k=>{const [y,m]=mParts(k);return MN[m]+" '"+String(y).slice(2)};
+const keys=()=>Object.keys(S.months).sort();
+
+const fmt0=new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0});
+const fmt2=new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',minimumFractionDigits:2,maximumFractionDigits:2});
+const money=(v,cents)=>{v=Math.round(v*100)/100;return (v<0?'−':'')+(cents?fmt2:fmt0).format(Math.abs(v))};
+const smoney=(v,cents)=>(v>0?'+':'')+money(v,cents);
+const compact=v=>{const a=Math.abs(v),s=v<0?'−$':'$';if(a>=1e6)return s+(a/1e6).toFixed(a>=1e7?0:1).replace(/\.0$/,'')+'M';if(a>=1e3)return s+(a/1e3).toFixed(a>=1e4?0:1).replace(/\.0$/,'')+'k';return s+Math.round(a)};
+const pct=p=>p==null?'':(p>0?'+':p<0?'−':'')+Math.abs(p*100).toFixed(Math.abs(p)<.1?1:Math.abs(p)<10?1:0)+'%';
+const dir=d=>d>0.004?'up':d<-0.004?'down':'flat';
+const arrow=d=>d>0.004?'▲':d<-0.004?'▼':'■';
+const chg=(c,cents)=>c?`<span class="chg ${dir(c.d)}">${arrow(c.d)} ${smoney(c.d,cents)}${c.p!=null?` <small>${pct(c.p)}</small>`:''}</span>`:'<span class="muted">—</span>';
+
+/* ---------- model ---------- */
+const activeHeads=()=>S.heads.filter(h=>!h.archived);
+const activeItems=h=>h.items.filter(i=>!i.archived);
+function itemMap(){const m={};for(const h of S.heads)for(const i of h.items)m[i.id]={h,i};return m}
+const single=h=>{const a=activeItems(h);return a.length===1&&a[0].name===h.name};
+function headTotal(k,h){const v=(S.months[k]||{}).vals||{};let t=0,any=false;for(const i of h.items)if(v[i.id]!=null){t+=v[i.id];any=true}return any?(h.debt?-t:t):null}
+function total(k){let t=0;for(const h of S.heads){const x=headTotal(k,h);if(x!=null)t+=x}return t}
+// value at a month: 'total' or a heading id
+const valOf=(k,who)=>who==='total'?total(k):(headTotal(k,S.heads.find(h=>h.id===who))||0);
+const PER=[[1,'1 mo','Since last month'],[3,'3 mo','3 months'],[6,'6 mo','6 months'],[12,'1 yr','1 year'],['all','All','All time']];
+// Base month for a comparison: the latest saved month at or before the target (handles skipped months).
+function baseKey(k,n){const ks=keys().filter(x=>x<k);if(!ks.length)return null;if(n==='all')return ks[0];const t=mAdd(k,-n);let b=null;for(const x of ks)if(x<=t)b=x;return b}
+function cmp(k,n,who='total'){const b=baseKey(k,n);if(!b)return null;const now=valOf(k,who),then=valOf(b,who);const d=now-then;return {d,p:then?d/Math.abs(then):null,base:b}}
+const latest=()=>{const ks=keys();return ks[ks.length-1]||null};
+const prevKey=k=>{const ks=keys().filter(x=>x<k);return ks[ks.length-1]||null};
+
+/* Amount fields accept arithmetic such as "1200 + 340.50" for adding up several balances. */
+function evalAmt(s){s=String(s==null?'':s).trim();if(!s)return null;s=s.replace(/[$,\s]/g,'').replace(/^\((.*)\)$/,'-$1').replace(/[−–]/g,'-');
+ if(!/^[-+*/().\d]+$/.test(s))return NaN;try{const v=Function('"use strict";return ('+s+')')();return typeof v==='number'&&isFinite(v)?Math.round(v*100)/100:NaN}catch(e){return NaN}}
+
+/* ---------- UI plumbing ---------- */
+let P='overview',AC=null;
+function say(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(say.t);say.t=setTimeout(()=>t.style.display='none',3200)}
+const openM=h=>{$('#sheet').innerHTML=h;if(!$('#modal').classList.contains('open')&&!(history.state&&history.state.m))history.pushState({m:1},'');$('#modal').classList.add('open');const f=$('#sheet [autofocus]');if(f)setTimeout(()=>f.focus(),60)};
+const closeM=fn=>{if(history.state&&history.state.m){AC=fn||null;history.back()}else{$('#modal').classList.remove('open');if(fn)fn()}};
+addEventListener('popstate',()=>{if($('#modal').classList.contains('open')){$('#modal').classList.remove('open');const f=AC;AC=null;if(f)f();return}
+ if(P!=='overview'){P='overview';render()}});
+$('#modal').addEventListener('click',e=>{if(e.target.id==='modal')closeM()});
+function ask(q,yes,fn,danger){openM(`<h3>${q}</h3><div class="row" style="margin-top:14px"><button onclick="closeM()">Cancel</button><button class="${danger?'pri danger':'pri'}" style="${danger?'background:var(--down);border-color:var(--down);color:#fff':''}" id="yes">${yes}</button></div>`);$('#yes').onclick=()=>closeM(fn)}
+
+const ICONS={overview:'<path d="M3 12l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',update:'<path d="M12 5v14M5 12h14"/><circle cx="12" cy="12" r="10"/>',history:'<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/>',settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'};
+const TABS=[['overview','Overview'],['update','Update'],['history','History'],['settings','Settings']];
+function goPage(p,keep){if(!ICONS[p])p='overview';if($('#modal').classList.contains('open'))closeM();
+ if(p!==P){if(P==='overview'&&p!=='overview')history.pushState({t:1},'','#'+p);else history.replaceState(history.state,'','#'+p)}
+ if(p==='update'&&P!=='update'&&!keep)UM=defaultUM();P=p;render();scrollTo(0,0)}
+window.goPage=goPage;
+
+function applyTheme(){const t=S.settings.theme;if(t==='auto')document.documentElement.removeAttribute('data-theme');else document.documentElement.setAttribute('data-theme',t);
+ const cs=getComputedStyle(document.documentElement);const dark=t==='dark'||(t==='auto'&&matchMedia('(prefers-color-scheme:dark)').matches);
+ if(NA&&NA.bars)try{NA.bars(cs.getPropertyValue('--bg').trim(),cs.getPropertyValue('--card').trim(),dark)}catch(e){}}
+matchMedia('(prefers-color-scheme:dark)').addEventListener('change',applyTheme);
+
+function render(){
+ $('#nav').innerHTML=TABS.map(([k,l])=>`<button class="${P===k?'on':''}" onclick="goPage('${k}')"><svg viewBox="0 0 24 24">${ICONS[k]}</svg>${l}</button>`).join('');
+ $('#main').className=P==='update'?'upd':'';$('#totbar').hidden=P!=='update';
+ ({overview:rOverview,update:rUpdate,history:rHistory,settings:rSettings})[P]();
+ bindCharts();
+}
+
+/* ---------- charts (hand-drawn SVG, with tap/hover read-outs) ---------- */
+const CH={};let chN=0;
+function niceTicks(lo,hi,n){if(lo===hi){const p=Math.abs(lo)*.1||100;lo-=p;hi+=p}const r=(hi-lo)/n,mag=Math.pow(10,Math.floor(Math.log10(r))),st=[1,2,2.5,5,10].map(x=>x*mag).find(x=>x>=r);const a=Math.floor(lo/st)*st,b=Math.ceil(hi/st)*st;const t=[];for(let v=a;v<=b+st/2;v+=st)t.push(Math.round(v*100)/100);return t}
+function chartW(){return Math.max(260,Math.min(612,($('#main').clientWidth||360)-30))}
+// Line chart of a value over months. pts: [{k, v}]
+function lineChart(pts,h=170){
+ const id='c'+(++chN),W=chartW(),L=48,R=10,T=10,B=24;
+ if(pts.length<2)return `<p class="muted small" style="margin:10px 0 2px">The chart appears once you have two months saved.</p>`;
+ const ix=pts.map(p=>{const [y,m]=mParts(p.k);return y*12+m}),x0=ix[0],x1=ix[ix.length-1];
+ const vs=pts.map(p=>p.v),tk=niceTicks(Math.min(...vs),Math.max(...vs),4),lo=tk[0],hi=tk[tk.length-1];
+ const X=i=>L+(ix[i]-x0)/((x1-x0)||1)*(W-L-R),Y=v=>T+(hi-v)/((hi-lo)||1)*(h-T-B);
+ const g=pts.map((p,i)=>({x:X(i),y:Y(p.v),k:p.k,v:p.v}));
+ const line=g.map((p,i)=>(i?'L':'M')+p.x.toFixed(1)+' '+p.y.toFixed(1)).join('');
+ const area=line+`L${g[g.length-1].x.toFixed(1)} ${h-B}L${g[0].x.toFixed(1)} ${h-B}Z`;
+ const every=Math.ceil(pts.length/Math.max(2,Math.floor((W-L)/56)));
+ let s=`<svg viewBox="0 0 ${W} ${h}" height="${h}" role="img" aria-label="Chart of totals by month">`;
+ for(const t of tk)s+=`<line class="grid" x1="${L}" x2="${W-R}" y1="${Y(t)}" y2="${Y(t)}"/><text class="axis" x="${L-6}" y="${Y(t)+4}" text-anchor="end">${compact(t)}</text>`;
+ s+=`<path class="ar" d="${area}"/><path class="ln" d="${line}"/>`;
+ g.forEach((p,i)=>{if((g.length-1-i)%every===0)s+=`<text class="axis" x="${p.x}" y="${h-6}" text-anchor="middle">${mShort(p.k)}</text>`});
+ if(g.length<=24)g.forEach(p=>s+=`<circle class="dt" cx="${p.x}" cy="${p.y}" r="3.5"/>`);
+ const lp=g[g.length-1];s+=`<circle class="dt" cx="${lp.x}" cy="${lp.y}" r="5"/>`;
+ s+=`<line class="cross" id="${id}x" y1="${T}" y2="${h-B}" style="display:none"/><circle class="dt" id="${id}d" r="6" style="display:none"/></svg>`;
+ CH[id]={type:'line',g,tip:p=>{const pv=g[g.indexOf(p)-1];return `${mName(p.k)}<br><b>${money(p.v)}</b>${pv?`<br>${smoney(p.v-pv.v)} vs prior`:''}`}};
+ return `<div class="chart" id="${id}">${s}<div class="tip"></div></div>`;
+}
+// Bars of month-over-month change: green up, red down, around a zero line.
+function changeBars(pts,h=130){
+ const id='c'+(++chN),W=chartW(),L=48,R=10,T=8,B=22;
+ if(pts.length<1)return '';
+ const vs=pts.map(p=>p.d),tk=niceTicks(Math.min(0,...vs),Math.max(0,...vs),3),lo=tk[0],hi=tk[tk.length-1];
+ const Y=v=>T+(hi-v)/((hi-lo)||1)*(h-T-B),bw=(W-L-R)/pts.length,w=Math.max(3,Math.min(26,bw-2)),r=Math.min(4,w/2);
+ let s=`<svg viewBox="0 0 ${W} ${h}" height="${h}" role="img" aria-label="Change each month">`;
+ for(const t of tk)s+=`<line class="grid" x1="${L}" x2="${W-R}" y1="${Y(t)}" y2="${Y(t)}"/><text class="axis" x="${L-6}" y="${Y(t)+4}" text-anchor="end">${compact(t)}</text>`;
+ const g=[];const every=Math.ceil(pts.length/Math.max(2,Math.floor((W-L)/56)));
+ pts.forEach((p,i)=>{const cx=L+bw*i+bw/2,x=cx-w/2,y0=Y(0),y1=Y(p.d),up=p.d>=0,hh=Math.abs(y1-y0);
+  // rounded end away from the baseline, square end on it
+  let d;if(hh<0.5)d=`M${x} ${y0}h${w}`;else{const rr=Math.min(r,hh);d=up?`M${x} ${y0}V${y1+rr}Q${x} ${y1} ${x+rr} ${y1}H${x+w-rr}Q${x+w} ${y1} ${x+w} ${y1+rr}V${y0}Z`:`M${x} ${y0}V${y1-rr}Q${x} ${y1} ${x+rr} ${y1}H${x+w-rr}Q${x+w} ${y1} ${x+w} ${y1-rr}V${y0}Z`}
+  s+=`<path class="${p.d>0.004?'b-up':p.d<-0.004?'b-down':'zero'}" d="${d}" data-i="${i}"/>`;
+  if((pts.length-1-i)%every===0)s+=`<text class="axis" x="${cx}" y="${h-5}" text-anchor="middle">${mShort(p.k)}</text>`;
+  g.push({x:cx,y:Math.min(y0,y1),k:p.k,v:p.d,p:p.p});});
+ s+=`<line class="zero" x1="${L}" x2="${W-R}" y1="${Y(0)}" y2="${Y(0)}"/></svg>`;
+ CH[id]={type:'bar',g,tip:p=>`${mName(p.k)}<br><b>${smoney(p.v)}</b>${p.p!=null?' · '+pct(p.p):''}`};
+ return `<div class="chart" id="${id}">${s}<div class="tip"></div></div>`;
+}
+function bindCharts(){document.querySelectorAll('.chart').forEach(el=>{const c=CH[el.id];if(!c)return;const tip=el.querySelector('.tip'),svg=el.querySelector('svg');
+ const show=e=>{const r=svg.getBoundingClientRect(),vb=svg.viewBox.baseVal,sx=(e.clientX-r.left)*vb.width/r.width;let best=c.g[0];for(const p of c.g)if(Math.abs(p.x-sx)<Math.abs(best.x-sx))best=p;
+  tip.innerHTML=c.tip(best);tip.style.display='block';const px=best.x*r.width/vb.width;tip.style.left=Math.max(tip.offsetWidth/2,Math.min(r.width-tip.offsetWidth/2,px))+'px';tip.style.top=Math.max(0,best.y*r.height/vb.height-tip.offsetHeight-10)+'px';
+  if(c.type==='line'){const x=$('#'+el.id+'x'),d=$('#'+el.id+'d');x.setAttribute('x1',best.x);x.setAttribute('x2',best.x);x.style.display='';d.setAttribute('cx',best.x);d.setAttribute('cy',best.y);d.style.display=''}
+  else el.querySelectorAll('path[data-i]').forEach(b=>b.classList.toggle('hl',+b.dataset.i!==c.g.indexOf(best)))};
+ const hide=()=>{tip.style.display='none';if(c.type==='line'){$('#'+el.id+'x').style.display='none';$('#'+el.id+'d').style.display='none'}else el.querySelectorAll('path.hl').forEach(b=>b.classList.remove('hl'))};
+ el.addEventListener('pointermove',show);el.addEventListener('pointerdown',show);el.addEventListener('pointerleave',hide);})}
+let rzT;addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(()=>{if(P==='overview'||P==='history')render()},150)});
+
+/* ---------- Overview ---------- */
+function rangeKeys(range){const ks=keys();if(range==='all'||!ks.length)return ks;const from=mAdd(ks[ks.length-1],-range);return ks.filter(k=>k>=from)}
+function reminderCard(){
+ const cm=curM();if(S.months[cm]||!S.heads.length)return '';
+ const draft=S.drafts[cm]&&Object.values(S.drafts[cm]).some(v=>String(v).trim());
+ return `<div class="banner"><div style="font-size:26px">🗓️</div><div class="grow"><b>Time to update ${MNL[mParts(cm)[1]]}</b><span class="muted">${draft?'You started entering this month — finish and save it.':'Enter this month\'s totals to see how you\'re doing.'}</span></div><button class="pri" onclick="goPage('update')">Update</button></div>`;
+}
+function notifyCard(){if(!NA||!NA.reminder)return '';try{const r=JSON.parse(NA.reminder());if(r.on&&!r.allowed)return `<div class="banner" style="background:var(--downbg)"><div style="font-size:24px">🔕</div><div class="grow"><b>Reminders are blocked</b><span class="muted">Allow notifications so you get the reminder on the 1st.</span></div><button onclick="NA.openNotifySettings()">Allow</button></div>`}catch(e){}return ''}
+function rOverview(){
+ const ks=keys(),k=latest();let h='';
+ if(!S.heads.length&&!ks.length){
+  $('#main').innerHTML=`<h2>Overview</h2><div class="card empty"><div class="ic">📈</div><h3>Track your money month by month</h3>
+  <ol class="steps"><li>Add headings like <b>Bank accounts</b>, <b>401k</b> or <b>Crypto</b>.</li><li>Each month, enter what each one holds.</li><li>See how you're doing against last month, 3 and 6 months, a year and all time.</li></ol>
+  <button class="pri full" onclick="goPage('update');headM()">Add your first heading</button><button class="full" onclick="importM()">Import from Excel</button><button class="link" onclick="sample()">Try it with sample data</button></div>`;return}
+ h+=notifyCard()+reminderCard();
+ if(!k){$('#main').innerHTML=`<h2>Overview</h2>${h}<div class="card empty"><div class="ic">✍️</div><h3>No months saved yet</h3><p class="muted">Enter your first month's totals and your overview will show up here.</p><button class="pri full" onclick="goPage('update')">Enter totals</button></div>`;return}
+ const T=total(k),c1=cmp(k,1);
+ h+=`<div class="card hero"><div class="between"><span class="muted">Net worth · ${mName(k,true)}</span>${k!==curM()?'<span class="tag">LATEST</span>':''}</div>
+ <div class="big">${money(T)}</div>${c1?`<span class="pill ${dir(c1.d)}">${arrow(c1.d)} ${smoney(c1.d)} ${c1.p!=null?'· '+pct(c1.p):''} <span style="font-weight:500;opacity:.8">vs ${mName(c1.base)}</span></span>`:'<span class="muted">Save another month to see your change.</span>'}</div>`;
+ h+=`<div class="card"><h3>How you're doing</h3><div class="tiles">${PER.map(([n,lb,long])=>{const c=cmp(k,n);
+  return c?`<div class="tile ${dir(c.d)}" title="${long}: compared with ${mName(c.base)}"><div class="lb">${lb}</div><div class="d">${arrow(c.d)} ${smoney(c.d)}</div><div class="p">${c.p!=null?pct(c.p):'—'}</div></div>`
+  :`<div class="tile na"><div class="lb">${lb}</div><div class="d">Not enough history</div></div>`}).join('')}</div>
+  <p class="muted small" style="margin:8px 2px 0">Each compares ${mName(k)} with the month that long before (or the nearest earlier one you saved).</p></div>`;
+ const rg=S.settings.range,rk=rangeKeys(rg);
+ h+=`<div class="card"><div class="between"><h3 style="margin:0">Net worth over time</h3><div class="seg">${[[6,'6M'],[12,'1Y'],[36,'3Y'],['all','All']].map(([v,l])=>`<button class="${rg==v?'on':''}" onclick="S.settings.range=${JSON.stringify(v)};save();render()">${l}</button>`).join('')}</div></div>
+  ${lineChart(rk.map(x=>({k:x,v:total(x)})))}</div>`;
+ const chPts=rk.map(x=>{const pk=prevKey(x);if(!pk)return null;const a=total(x),b=total(pk);return {k:x,d:a-b,p:b?(a-b)/Math.abs(b):null}}).filter(Boolean);
+ if(chPts.length)h+=`<div class="card"><h3>Change each month</h3>${changeBars(chPts)}<p class="muted small" style="margin:6px 2px 0"><span class="chg up">▲ green</span> = up from the month before, <span class="chg down">▼ red</span> = down.</p></div>`;
+ const hs=S.heads.map(x=>({h:x,v:headTotal(k,x)})).filter(x=>x.v!=null);const pos=hs.filter(x=>x.v>0).reduce((a,x)=>a+x.v,0)||1;
+ h+=`<div class="card"><h3>By heading</h3>${hs.map(({h:x,v})=>{const c=cmp(k,1,x.id);return `<div class="brk"><div class="between"><b>${esc(x.name)}${x.debt?' <span class="tag">DEBT</span>':''}</b><span class="num" style="font-weight:600">${money(v)}</span></div>
+  <div class="between small"><span class="muted">${v>0?Math.round(v/pos*100)+'% of assets':''}</span>${c?chg(c):''}</div><div class="bar${x.debt?' debt':''}"><i style="width:${Math.min(100,Math.abs(v)/pos*100)}%"></i></div></div>`}).join('')||'<p class="muted">Nothing entered for this month.</p>'}</div>`;
+ $('#main').innerHTML=`<h2>Overview</h2>`+h;
+}
+
+/* ---------- Update (enter a month's totals, manage headings) ---------- */
+let UM=null;
+// The Update page opens on the current month.
+function defaultUM(){return curM()}
+function lastVals(m){const pk=prevKey(m);return pk?S.months[pk].vals:{}}
+function draftOf(m){if(S.drafts[m])return S.drafts[m];const v=(S.months[m]||{}).vals||{},d={};for(const id in v)d[id]=String(v[id]);return d}
+function isDirty(m){if(!S.drafts[m])return false;const a=S.drafts[m],b=(S.months[m]||{}).vals||{};const ids=new Set([...Object.keys(a),...Object.keys(b)]);for(const id of ids){const x=evalAmt(a[id]);if((x==null?null:x)!==(b[id]==null?null:b[id]))return true}return false}
+function rUpdate(){
+ if(!UM)UM=defaultUM();const m=UM,saved=!!S.months[m],D=draftOf(m),lv=lastVals(m),pk=prevKey(m);
+ let h=`<div class="mnav"><button onclick="UM=mAdd(UM,-1);render()" aria-label="Previous month">‹</button><div style="text-align:center"><b>${mName(m,true)}</b><div class="muted small">${saved?(isDirty(m)?'Saved · unsaved changes':'Saved ✓'):(isDirty(m)?'Not saved yet · draft kept':'Not entered yet')}</div></div><button onclick="UM=mAdd(UM,1);render()" aria-label="Next month" ${m>=curM()?'disabled':''}>›</button></div>`;
+ const hs=activeHeads();
+ if(!hs.length)h+=`<div class="card empty"><div class="ic">🏦</div><h3>Add your first heading</h3><p class="muted">A heading is a group like <b>Bank accounts</b>, <b>401k</b>, <b>Crypto</b> or <b>Credit cards</b>. Each gets a field for the dollar amount, and you can put several accounts under one heading.</p></div>`;
+ for(const x of hs){const its=activeItems(x),one=single(x);
+  h+=`<div class="card"><div class="hd"><h3>${esc(x.name)}${x.debt?'<span class="tag">DEBT</span>':''}</h3><div class="row" style="flex:none;gap:2px"><span class="muted small num" id="st-${x.id}"></span><button class="dots" onclick="headM('${x.id}')" aria-label="Edit heading">⋯</button></div></div>`;
+  for(const i of its){const last=lv[i.id];
+   h+=`<div class="fld">${one?'':`<div class="lab"><span onclick="itemM('${x.id}','${i.id}')">${esc(i.name)} ✎</span></div>`}
+   <div class="money"><input inputmode="decimal" autocomplete="off" data-id="${i.id}" value="${esc(D[i.id]||'')}" placeholder="${last!=null?money(last,true).replace('$','').replace('−','-'):'0.00'}" aria-label="${esc(x.name+(one?'':' – '+i.name))}"></div>
+   <div class="fhint"><span class="muted" id="hn-${i.id}"></span>${last!=null?`<button onclick="useLast('${i.id}')">Last: ${money(last,true)}</button>`:''}</div></div>`}
+  h+=`<button class="link" onclick="addItemM('${x.id}')">+ Add account to ${esc(x.name)}</button></div>`}
+ h+=`<button class="full" style="border-style:dashed;padding:14px" onclick="headM()">+ Add heading</button>`;
+ if(saved)h+=`<button class="link danger" style="display:block;margin:10px auto" onclick="delMonth('${m}')">Delete ${mName(m)}</button>`;
+ if(!pk&&hs.length)h+=`<p class="muted small" style="text-align:center">Tip: you can type sums like <b>1200 + 340.50</b> into any field.</p>`;
+ $('#main').innerHTML=h;
+ document.querySelectorAll('.money input').forEach(inp=>inp.addEventListener('input',()=>{const d=S.drafts[m]||(S.drafts[m]=draftOf(m));d[inp.dataset.id]=inp.value;if(!isDirty(m))delete S.drafts[m];save();liveTotals()}));
+ liveTotals();
+}
+function useLast(id){const v=lastVals(UM)[id];if(v==null)return;const inp=document.querySelector(`.money input[data-id="${id}"]`);inp.value=String(v);inp.dispatchEvent(new Event('input'))}
+function liveTotals(){
+ const m=UM,lv=lastVals(m),pk=prevKey(m);let tot=0,blank=0,bad=0;
+ for(const x of activeHeads()){let st=0;for(const i of activeItems(x)){const inp=document.querySelector(`.money input[data-id="${i.id}"]`);if(!inp)continue;const v=evalAmt(inp.value),hn=$('#hn-'+i.id);
+   inp.classList.toggle('bad',Number.isNaN(v));if(Number.isNaN(v))bad++;
+   let use=v;if(v==null){blank++;use=lv[i.id]!=null?lv[i.id]:0}else if(Number.isNaN(v))use=0;st+=use;
+   if(hn){const showSum=v!=null&&!Number.isNaN(v)&&/[-+*/]/.test(inp.value.trim().replace(/^-/,''));const lst=lv[i.id];
+    hn.innerHTML=Number.isNaN(v)?'<span style="color:var(--down)">Not a number</span>':showSum?'= '+money(v,true):(v!=null&&lst!=null?chg({d:v-lst,p:lst?(v-lst)/Math.abs(lst):null},true):'')}}
+  const sv=x.debt?-st:st;tot+=sv;const se=$('#st-'+x.id);if(se&&activeItems(x).length>1)se.textContent=money(sv)}
+ const prev=pk?total(pk):null,c=prev!=null?{d:tot-prev,p:prev?(tot-prev)/Math.abs(prev):null}:null;
+ const hasHeads=activeHeads().length>0;
+ $('#totbar').innerHTML=hasHeads?`<div class="in"><div><div class="muted small">Total${blank?` · ${blank} blank${pk?' (using last month)':''}`:''}</div><b>${money(tot)}</b> ${c?`<div class="small">${chg(c)} <span class="muted">vs ${mName(pk)}</span></div>`:''}</div><button class="pri" onclick="saveMonth()" ${bad?'disabled':''}>${S.months[m]&&!isDirty(m)?'Saved ✓':'Save'}</button></div>`:'';
+ $('#totbar').hidden=!hasHeads;
+}
+function saveMonth(force){
+ const m=UM,D=draftOf(m),lv=lastVals(m),items=activeHeads().flatMap(activeItems);
+ const blanks=items.filter(i=>evalAmt(D[i.id])==null);
+ if(blanks.length&&!force){const can=blanks.filter(i=>lv[i.id]!=null).length;
+  openM(`<h3>${blanks.length} field${blanks.length>1?'s are':' is'} blank</h3><p class="muted">${blanks.map(i=>esc(i.name)).slice(0,6).join(', ')}${blanks.length>6?'…':''}</p>
+   ${can?`<button class="pri full" onclick="closeM(()=>saveMonth('last'))">Use last month's amounts for blanks</button>`:''}
+   <button class="full" onclick="closeM(()=>saveMonth('zero'))">Count blanks as $0</button><button class="full" onclick="closeM()">Go back and fill them in</button>`);return}
+ const vals={};for(const i of items){let v=evalAmt(D[i.id]);if(Number.isNaN(v))return say('Fix the field marked in red first.');if(v==null)v=force==='last'&&lv[i.id]!=null?lv[i.id]:0;vals[i.id]=v}
+ // keep values of hidden (archived) accounts that were saved for this month earlier
+ const old=(S.months[m]||{}).vals||{};const act=new Set(items.map(i=>i.id));for(const id in old)if(!act.has(id))vals[id]=old[id];
+ S.months[m]={vals,at:Date.now()};delete S.drafts[m];save();say(mName(m,true)+' saved');goPage('overview');
+}
+function delMonth(m){ask(`Delete ${mName(m,true)}?`,'Delete',()=>{delete S.months[m];delete S.drafts[m];save();render();say(mName(m)+' deleted')},true)}
+
+function headM(id){const x=id&&S.heads.find(h=>h.id===id);
+ const has=x&&x.items.some(i=>Object.values(S.months).some(mo=>mo.vals[i.id]!=null));const idx=x?S.heads.indexOf(x):-1;
+ openM(`<h3>${x?'Edit heading':'New heading'}</h3><label>Name<input id="hn" value="${esc(x?x.name:'')}" placeholder="e.g. 401k, Crypto, Bank accounts" autofocus></label>
+  ${x?'':`<label>Accounts under it <span class="small">(optional, one per line)</span><textarea id="hi" rows="3" placeholder="e.g.\nChecking\nSavings" style="font-family:inherit;font-size:15px"></textarea></label>`}
+  <label class="chk"><input type="checkbox" id="hd" ${x&&x.debt?'checked':''}> This is money owed (loan, credit card) — subtract it</label>
+  <button class="pri full" id="hs">${x?'Save':'Add heading'}</button>
+  ${x?`<div class="row"><button onclick="moveHead('${x.id}',-1)" ${idx<=0?'disabled':''}>↑ Move up</button><button onclick="moveHead('${x.id}',1)" ${idx>=S.heads.length-1?'disabled':''}>↓ Move down</button></div>
+  <button class="full danger" style="margin-top:8px" onclick="removeM('head','${x.id}',${has})">${has?'Remove heading…':'Delete heading'}</button>`:''}`);
+ $('#hs').onclick=()=>{const n=$('#hn').value.trim();if(!n)return say('Give the heading a name.');
+  if(x){if(single(x))activeItems(x)[0].name=n;x.name=n;x.debt=$('#hd').checked}
+  else{const names=$('#hi').value.split('\n').map(s=>s.trim()).filter(Boolean);S.heads.push({id:uid(),name:n,debt:$('#hd').checked,items:(names.length?names:[n]).map(s=>({id:uid(),name:s}))})}
+  save();closeM(render)}}
+function moveHead(id,d){const i=S.heads.findIndex(h=>h.id===id),j=i+d;if(j<0||j>=S.heads.length)return;[S.heads[i],S.heads[j]]=[S.heads[j],S.heads[i]];save();headM(id);render()}
+function addItemM(hid){const x=S.heads.find(h=>h.id===hid),one=single(x);
+ openM(`<h3>Add account to ${esc(x.name)}</h3><label>Account name<input id="in" placeholder="e.g. Savings, Coinbase, Roth IRA" autofocus></label>
+  ${one?`<label>Name for the existing account<input id="ie" value="${esc(x.name)}"></label>`:''}<button class="pri full" id="is">Add</button>`);
+ $('#is').onclick=()=>{const n=$('#in').value.trim();if(!n)return say('Give the account a name.');if(one){const e=$('#ie').value.trim();if(e)activeItems(x)[0].name=e}
+  x.items.push({id:uid(),name:n});save();closeM(render)}}
+function itemM(hid,iid){const x=S.heads.find(h=>h.id===hid),i=x.items.find(t=>t.id===iid),its=activeItems(x),idx=its.indexOf(i);
+ const has=Object.values(S.months).some(mo=>mo.vals[iid]!=null);
+ openM(`<h3>Edit account</h3><label>Name<input id="in" value="${esc(i.name)}" autofocus></label><button class="pri full" id="is">Save</button>
+  <div class="row"><button onclick="moveItem('${hid}','${iid}',-1)" ${idx<=0?'disabled':''}>↑ Move up</button><button onclick="moveItem('${hid}','${iid}',1)" ${idx>=its.length-1?'disabled':''}>↓ Move down</button></div>
+  <button class="full danger" style="margin-top:8px" onclick="removeM('item','${hid}',${has},'${iid}')">${has?'Remove account…':'Delete account'}</button>`);
+ $('#is').onclick=()=>{const n=$('#in').value.trim();if(!n)return;i.name=n;save();closeM(render)}}
+function moveItem(hid,iid,d){const x=S.heads.find(h=>h.id===hid),its=activeItems(x),a=its.findIndex(t=>t.id===iid),b=a+d;if(b<0||b>=its.length)return;
+ const ia=x.items.indexOf(its[a]),ib=x.items.indexOf(its[b]);[x.items[ia],x.items[ib]]=[x.items[ib],x.items[ia]];save();itemM(hid,iid);render()}
+// Remove a heading or account. With history, offer to hide it (past months keep their totals) or delete it everywhere.
+function removeM(kind,hid,has,iid){const x=S.heads.find(h=>h.id===hid),t=kind==='head'?x:x.items.find(i=>i.id===iid);
+ const ids=kind==='head'?x.items.map(i=>i.id):[iid];
+ const wipe=()=>{for(const mo of Object.values(S.months))for(const id of ids)delete mo.vals[id];for(const d of Object.values(S.drafts))for(const id of ids)delete d[id];
+  if(kind==='head')S.heads=S.heads.filter(h=>h!==x);else{x.items=x.items.filter(i=>i!==t);if(!x.items.length)S.heads=S.heads.filter(h=>h!==x)}
+  for(const k in S.months)if(!Object.keys(S.months[k].vals).length)delete S.months[k];save();render()};
+ if(!has){if(kind==='item'&&activeItems(x).length===1)return say('A heading needs at least one account. Delete the heading instead.');wipe();closeM();return}
+ openM(`<h3>Remove ${esc(t.name)}?</h3><p class="muted">It has amounts saved in past months.</p>
+  <button class="pri full" id="ra">Hide it — keep past months as they are</button><p class="muted small" style="margin:-2px 2px 12px">Use this when you closed or sold the account. Your history and comparisons stay correct. You can bring it back in Settings.</p>
+  <button class="full danger" id="rd">Delete it and its amounts from every month</button><button class="full" onclick="closeM()">Cancel</button>`);
+ $('#ra').onclick=()=>{if(kind==='item'&&activeItems(x).length===1){x.archived=true}else t.archived=true;save();closeM(render);say(t.name+' hidden')};
+ $('#rd').onclick=()=>ask(`Delete ${esc(t.name)} from every month?`,'Delete',()=>{wipe();say(t.name+' deleted')},true)}
+
+/* ---------- History ---------- */
+function rHistory(){
+ const ks=keys();if(!ks.length){$('#main').innerHTML=`<h2>History</h2><div class="card empty"><div class="ic">🗂️</div><p class="muted">Saved months will be listed here with how each one compares.</p><button class="pri full" onclick="goPage('update')">Enter totals</button></div>`;return}
+ const k=ks[ks.length-1],hs=S.heads.filter(x=>ks.some(m=>headTotal(m,x)!=null));
+ let who=S.settings.hist;if(who!=='total'&&!hs.some(x=>x.id===who))who='total';const U=S.settings.cmp;
+ let h=`<h2>History</h2><div class="card"><div class="between" style="margin-bottom:6px"><h3 style="margin:0">Compare · ${mName(k)}</h3><div class="seg"><button class="${U==='usd'?'on':''}" onclick="S.settings.cmp='usd';save();render()">$</button><button class="${U==='pct'?'on':''}" onclick="S.settings.cmp='pct';save();render()">%</button></div></div>
+  <div class="tblw"><table class="cmp"><tr><th></th>${PER.map(p=>`<th>${p[1]}</th>`).join('')}</tr>`;
+ const rowH=(name,id,cls)=>`<tr class="${cls||''}"><td>${name}</td>${PER.map(([n])=>{const c=cmp(k,n,id);if(!c)return '<td class="na">—</td>';const t=U==='usd'?(c.d>0?'+':c.d<0?'−':'')+compact(Math.abs(c.d)):(c.p!=null?pct(c.p):'—');return `<td class="${dir(c.d)}">${t}</td>`}).join('')}</tr>`;
+ h+=rowH('Net worth','total','tot')+hs.map(x=>rowH(esc(x.name)+(x.archived?' <span class="muted small">(hidden)</span>':''),x.id)).join('')+`</table></div></div>`;
+ h+=`<div class="chips"><button class="${who==='total'?'on':''}" onclick="S.settings.hist='total';save();render()">Net worth</button>${hs.map(x=>`<button class="${who===x.id?'on':''}" onclick="S.settings.hist='${x.id}';save();render()">${esc(x.name)}</button>`).join('')}</div>`;
+ h+=`<div class="card">${lineChart(ks.map(m=>({k:m,v:valOf(m,who)})))}</div><div class="card" style="padding:4px 4px">`;
+ for(let j=ks.length-1;j>=0;j--){const m=ks[j],v=valOf(m,who),pm=ks[j-1],c=pm?{d:v-valOf(pm,who),p:valOf(pm,who)?(v-valOf(pm,who))/Math.abs(valOf(pm,who)):null}:null;
+  h+=`<div class="mrow ${c?dir(c.d):'flat'}" onclick="monthM('${m}')"><div><b>${mName(m,true)}</b><div class="muted small">${pm?'vs '+mName(pm):'First month'}</div></div><div class="r"><div class="num" style="font-weight:700">${money(v)}</div>${c?chg(c):''}</div></div>`}
+ $('#main').innerHTML=h+'</div>';
+}
+function monthM(m){const v=S.months[m].vals,pk=prevKey(m),pv=pk?S.months[pk].vals:{};let h=`<h3>${mName(m,true)}</h3><div style="margin-bottom:14px">`;
+ for(const x of S.heads){const t=headTotal(m,x);if(t==null)continue;const pt=pk?headTotal(pk,x):null;
+  h+=`<div class="kv"><b>${esc(x.name)}</b><span class="r num"><b>${money(t)}</b> ${pt!=null?chg({d:t-pt,p:pt?(t-pt)/Math.abs(pt):null}):''}</span></div>`;
+  const its=x.items.filter(i=>v[i.id]!=null);if(its.length>1||(its.length===1&&its[0].name!==x.name))for(const i of its)h+=`<div class="kv sub"><span>${esc(i.name)}</span><span class="num">${money(v[i.id],true)}</span></div>`}
+ const T=total(m),PT=pk?total(pk):null;
+ h+=`<div class="kv" style="border-top:2px solid var(--line);font-size:17px"><b>Net worth</b><span class="num"><b>${money(T)}</b> ${PT!=null?chg({d:T-PT,p:PT?(T-PT)/Math.abs(PT):null}):''}</span></div></div>
+  <div class="row"><button class="danger" onclick="closeM(()=>delMonth('${m}'))">Delete</button><button class="pri" onclick="closeM(()=>{UM='${m}';goPage('update',1)})">Edit</button></div>`;
+ openM(h)}
+
+/* ---------- Settings ---------- */
+function rSettings(){
+ let r=null;if(NA&&NA.reminder)try{r=JSON.parse(NA.reminder())}catch(e){}
+ const hrs=Array.from({length:24},(_,i)=>`<option value="${i}" ${r&&r.hour===i?'selected':''}>${(i%12||12)+(i<12?' AM':' PM')}</option>`).join('');
+ let h=`<h2>Settings</h2><div class="card"><h3>Monthly reminder</h3>`;
+ if(r){h+=`<div class="between"><span>Notify me on the 1st of each month</span><label class="sw"><input type="checkbox" id="ron" ${r.on?'checked':''} onchange="setRem()"><span></span></label></div>
+  ${r.on?`<label style="margin-top:10px">Time<select id="rhr" onchange="setRem()">${hrs}</select></label>
+  ${r.allowed?`<p class="muted small" style="margin:0 0 10px">Next reminder: ${new Date(r.next).toLocaleString(undefined,{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</p>`:`<p class="small" style="color:var(--down);margin:0 0 10px">Notifications are blocked for this app, so the reminder can't show.</p><button class="full" onclick="NA.openNotifySettings()">Allow notifications</button>`}
+  <button class="full" onclick="NA.testReminder()">Send a test notification</button>`:''}`}
+ else h+=`<p class="muted" style="margin-top:0">Reminder notifications on the 1st of each month come with the Android app. In the browser, the Overview shows a reminder whenever this month hasn't been entered yet.</p><button class="pri full" onclick="open('https://github.com/xXTragicMagicXx/Personal-Finance/releases/latest','_blank','noopener')">Get the Android app</button>`;
+ h+=`</div><div class="card"><h3>Appearance</h3><label>Theme<select onchange="S.settings.theme=this.value;save();applyTheme()">${[['auto','Match my phone'],['light','Light'],['dark','Dark']].map(([v,l])=>`<option value="${v}" ${S.settings.theme===v?'selected':''}>${l}</option>`).join('')}</select></label></div>`;
+ h+=`<div class="card"><h3>Your data</h3><p class="muted small" style="margin-top:0">Everything stays on this device. Save a backup now and then so you can restore it on a new phone.</p>
+  <button class="full" onclick="importM()">Import from Excel / CSV</button><button class="full" onclick="exportCSV()">Export to Excel (CSV)</button>
+  <div class="row"><button onclick="backup()">Save backup</button><button onclick="$('#rf').click()">Restore backup</button></div><input type="file" id="rf" accept=".json,application/json" hidden onchange="restore(this)"></div>`;
+ const hid=[];for(const x of S.heads){if(x.archived)hid.push([x,null]);else for(const i of x.items)if(i.archived)hid.push([x,i])}
+ if(hid.length)h+=`<div class="card"><h3>Hidden headings &amp; accounts</h3>${hid.map(([x,i])=>`<div class="kv"><span>${esc(x.name)}${i?' › '+esc(i.name):''}</span><button class="link" onclick="unhide('${x.id}',${i?`'${i.id}'`:'null'})">Bring back</button></div>`).join('')}</div>`;
+ h+=`<div class="card"><button class="full danger" onclick="ask('Erase all headings and months?','Erase everything',()=>{S=def();save();applyTheme();goPage('overview')},true)">Erase everything</button>
+  <p class="muted small" style="text-align:center;margin:4px 0 0">Finance${NA&&NA.version?' · app '+esc(NA.version()):''}</p></div>`;
+ $('#main').innerHTML=h;
+}
+function setRem(){const on=$('#ron').checked,hr=$('#rhr')?+$('#rhr').value:9;NA.setReminder(on,hr);setTimeout(render,150)}
+window.onReminder=()=>{if(P==='settings'||P==='overview')render()};
+function unhide(hid,iid){const x=S.heads.find(h=>h.id===hid);if(iid){x.items.find(i=>i.id===iid).archived=false;x.archived=false}else{x.archived=false;if(!activeItems(x).length)x.items.forEach(i=>i.archived=false)}save();render();say('Brought back')}
+
+/* ---------- files ---------- */
+function download(name,text,mime){
+ if(NA&&NA.begin){const b=new TextEncoder().encode(text);NA.begin(name);for(let i=0;i<b.length;i+=48000){let s='';const c=b.subarray(i,i+48000);for(let j=0;j<c.length;j++)s+=String.fromCharCode(c[j]);NA.append(btoa(s))}
+  openM(`<h3>${esc(name)}</h3><button class="pri full" onclick="NA.save('${mime}');closeM()">Save to Downloads</button><button class="full" onclick="NA.share('${mime}','${esc(name)}');closeM()">Share…</button>`);return}
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:mime}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
+const today=()=>new Date().toISOString().slice(0,10);
+function backup(){download(`finance-backup-${today()}.json`,JSON.stringify(Object.assign({app:'finance'},S)),'application/json')}
+function restore(inp){const f=inp.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{const d=JSON.parse(rd.result);if(!d.heads||!d.months)throw 0;
+ ask('Replace everything on this device with this backup?','Replace',()=>{delete d.app;localStorage.setItem(KEY,JSON.stringify(d));S=load();applyTheme();goPage('overview');say('Backup restored')})}catch(e){say('That file is not a Finance backup.')}inp.value=''};rd.readAsText(f)}
+const colName=(x,i)=>x.items.length===1&&i.name===x.name?x.name:x.name+': '+i.name;
+function exportCSV(){const ks=keys();if(!ks.length)return say('Nothing to export yet.');const cols=[];for(const x of S.heads)for(const i of x.items)if(ks.some(k=>S.months[k].vals[i.id]!=null))cols.push([x,i]);
+ const q=s=>/[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;
+ const rows=[['Month',...cols.map(([x,i])=>colName(x,i)+(x.debt?' (debt)':'')),'Net worth'].map(q).join(',')];
+ for(const k of ks)rows.push([k,...cols.map(([,i])=>{const v=S.months[k].vals[i.id];return v==null?'':v}),total(k)].join(','));
+ download(`finance-${today()}.csv`,rows.join('\n')+'\n','text/csv')}
+
+/* Import: paste cells copied from Excel, or a CSV file. Months can run down the rows or across the columns. */
+function parseTable(t){const sep=t.includes('\t')?'\t':(t.split('\n')[0].split(';').length>t.split('\n')[0].split(',').length?';':',');const rows=[];let row=[],cell='',q=false;
+ for(let i=0;i<t.length;i++){const c=t[i];if(q){if(c==='"'){if(t[i+1]==='"'){cell+='"';i++}else q=false}else cell+=c}
+  else if(c==='"'&&!cell)q=true;else if(c===sep){row.push(cell);cell=''}else if(c==='\n'||c==='\r'){if(c==='\r'&&t[i+1]==='\n')i++;row.push(cell);rows.push(row);row=[];cell=''}else cell+=c}
+ if(cell||row.length){row.push(cell);rows.push(row)}return rows.map(r=>r.map(s=>s.trim())).filter(r=>r.some(Boolean))}
+function parseMonth(s){s=String(s||'').trim().toLowerCase();if(!s)return null;let m;
+ if(m=s.match(/^(\d{4})[-/.](\d{1,2})(?:[-/.]\d{1,2})?/))return mk(+m[1],+m[2]-1);
+ if(m=s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})$/))return mk(yr(m[3]),+m[1]-1);
+ if(m=s.match(/^(\d{1,2})[-/.](\d{4}|\d{2})$/))return +m[1]<=12?mk(yr(m[2]),+m[1]-1):null;
+ if(m=s.match(/^([a-z]{3,9})\.?[\s\-/,']*(\d{4}|\d{2})$/)||s.match(/^\d{1,2}[\s-]([a-z]{3,9})[\s-](\d{4}|\d{2})$/)){const i=MN.findIndex(n=>m[1].startsWith(n.toLowerCase()));return i<0?null:mk(yr(m[2]),i)}
+ if(/^\d{5}$/.test(s)){const d=new Date(Date.UTC(1899,11,30)+ +s*864e5);return mk(d.getUTCFullYear(),d.getUTCMonth())} // Excel serial date
+ return null}
+const yr=y=>{y=+y;return y<100?2000+y:y};
+function parseAmt(s){s=String(s||'').trim();if(!s||s==='-')return null;const neg=/^\(.*\)$/.test(s)||/^-|^−/.test(s);const v=parseFloat(s.replace(/[^\d.]/g,''));return isNaN(v)?NaN:neg?-v:v}
+function analyze(text){const R=parseTable(text);if(R.length<2)return {err:'Paste at least a header row and one row of amounts.'};
+ // which way do the months run?
+ const across=R[0].slice(1).filter(c=>parseMonth(c)).length,down=R.slice(1).filter(r=>parseMonth(r[0])).length;
+ let cols=[],months=[];const grid=[];
+ if(across>=down&&across>0){months=R[0].slice(1).map(parseMonth);for(const r of R.slice(1))cols.push(r[0]);R.slice(1).forEach((r,ri)=>months.forEach((m,mi)=>{if(m)grid.push([m,ri,r[mi+1]])}))}
+ else if(down>0){cols=R[0].slice(1);months=R.slice(1).map(r=>parseMonth(r[0]));R.slice(1).forEach((r,ri)=>{const m=months[ri];if(m)cols.forEach((c,ci)=>grid.push([m,ci,r[ci+1]]))})}
+ else return {err:'Couldn\'t find any months. Put dates like "Jan 2025" or "2025-01" in the first row or first column.'};
+ const skip=n=>/^(total|net ?worth|sum|grand total|change|difference|%|percent)/i.test(n)||!n;
+ const fields=cols.map(n=>{n=String(n||'').trim();const debt=/\((debt|loan|owed)\)\s*$/i.test(n);n=n.replace(/\s*\((debt|loan|owed)\)\s*$/i,'');const sp=n.match(/^(.+?)\s*[:›>|]\s*(.+)$/);return {raw:n,skip:skip(n),debt,head:sp?sp[1]:n,item:sp?sp[2]:n}});
+ const out={};let n=0,bad=0;for(const [m,ci,cell] of grid){if(fields[ci].skip)continue;const v=parseAmt(cell);if(v==null)continue;if(isNaN(v)){bad++;continue}(out[m]=out[m]||{})[ci]=v;n++}
+ const ms=Object.keys(out).sort();if(!ms.length)return {err:'Found months but no amounts next to them.'};
+ return {fields,out,ms,n,bad}}
+function importM(){openM(`<h3>Import from Excel</h3><p class="muted small" style="margin-top:0">In Excel, select your table (including the month row or column and the names) and copy it, then paste below. Or save it as CSV and pick the file.</p>
+ <p class="muted small">Months can go across the top <i>or</i> down the side. Rows/columns named <b>Total</b> or <b>Net worth</b> are skipped (the app adds them up). Use <b>Heading: Account</b> (e.g. <b>Bank: Savings</b>) to group accounts, and add <b>(debt)</b> to anything owed.</p>
+ <textarea id="it" rows="7" placeholder="Month	Checking	Savings	401k	Crypto&#10;Jan 2025	2,500	10,000	45,000	3,200&#10;Feb 2025	2,750	10,400	46,100	2,900"></textarea>
+ <div class="row"><button onclick="$('#if').click()">Pick CSV file</button><button class="pri" onclick="previewImport($('#it').value)">Next</button></div><input type="file" id="if" accept=".csv,.tsv,.txt,text/csv" hidden onchange="const r=new FileReader();r.onload=()=>previewImport(r.result);r.readAsText(this.files[0])">`)}
+function previewImport(text){const a=analyze(text);if(a.err)return say(a.err);
+ const used=a.fields.filter((f,i)=>!f.skip&&a.ms.some(m=>a.out[m][i]!=null));const heads=[...new Set(used.map(f=>f.head))];
+ const over=a.ms.filter(m=>S.months[m]).length;
+ openM(`<h3>Ready to import</h3><div class="kv"><span>Months</span><b>${a.ms.length} · ${mName(a.ms[0])} – ${mName(a.ms[a.ms.length-1])}</b></div><div class="kv"><span>Headings</span><b>${heads.length}</b></div><div class="kv"><span>Amounts</span><b>${a.n}</b></div>
+  <p class="muted small">${heads.map(esc).join(', ')}</p>${a.bad?`<p class="small" style="color:var(--down)">${a.bad} cells weren't numbers and were skipped.</p>`:''}
+  ${over?`<p class="small">${over} of these months already exist here; their amounts for these accounts will be replaced.</p>`:''}
+  <button class="pri full" id="go">Import</button><button class="full" onclick="importM()">Back</button>`);
+ $('#go').onclick=()=>{const ids=a.fields.map(f=>{if(f.skip)return null;let x=S.heads.find(h=>h.name.toLowerCase()===f.head.toLowerCase());if(!x){x={id:uid(),name:f.head,debt:f.debt,items:[]};S.heads.push(x)}
+  let i=x.items.find(t=>t.name.toLowerCase()===f.item.toLowerCase());if(!i){i={id:uid(),name:f.item};x.items.push(i)}x.archived=false;i.archived=false;return i.id});
+  S.heads=S.heads.filter(h=>h.items.length);
+  for(const m of a.ms){const mo=S.months[m]||(S.months[m]={vals:{},at:Date.now()});for(const ci in a.out[m])if(ids[ci])mo.vals[ids[ci]]=a.fields[ci].debt?Math.abs(a.out[m][ci]):a.out[m][ci]}
+  save();closeM(()=>goPage('overview'));say(`Imported ${a.ms.length} months`)}}
+
+function sample(){const H=[['Bank accounts',0,[['Checking',3200],['Savings',12000]]],['401k',0,[['401k',48000]]],['Crypto',0,[['Crypto',4200]]],['Brokerage',0,[['Brokerage',9000]]],['Credit card',1,[['Credit card',1800]]]];
+ S.heads=H.map(([n,d,its])=>({id:uid(),name:n,debt:!!d,items:its.map(([m])=>({id:uid(),name:m}))}));const base=H.flatMap(h=>h[2].map(i=>i[1]));
+ let k=mAdd(curM(),-19);const cur=base.slice();for(let j=0;j<19;j++){const vals={};let q=0;
+  S.heads.forEach(x=>x.items.forEach(i=>{const b=cur[q];const g=x.name==='Crypto'?(Math.sin(j*1.3)*.18+.03):x.debt?(Math.cos(j)*.3):x.name==='401k'?.012+Math.sin(j*.8)*.025:(Math.sin(j*2.1+q)*.06+.01);cur[q]=Math.max(0,Math.round(b*(1+g)+(x.name==='401k'?650:0)));vals[i.id]=cur[q];q++}));
+  S.months[k]={vals,at:Date.now()};k=mAdd(k,1)}
+ save();render();say('Sample data loaded — erase it in Settings when you are done.')}
+
+/* ---------- start ---------- */
+applyTheme();
+{const p=location.hash.slice(1);if(ICONS[p]&&p!=='overview'){history.replaceState(null,'','#overview');P='overview';goPage(p)}else{history.replaceState(null,'','#overview');render()}}
+if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+</script>
+</body>
+</html>
